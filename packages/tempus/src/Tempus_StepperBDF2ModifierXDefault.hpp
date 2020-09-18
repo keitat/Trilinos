@@ -43,7 +43,7 @@ public:
       case StepperBDF2ModifierXBase<Scalar>::X_BEGIN_STEP:
       case StepperBDF2ModifierXBase<Scalar>::X_BEFORE_SOLVE:
       case StepperBDF2ModifierXBase<Scalar>::X_AFTER_SOLVE:
-      case StepperBDF2ModifierXBase<Scalar>::XDOT_END_STEP:
+      case StepperBDF2ModifierXBase<Scalar>::X_END_STEP:
       {
         // No-op.
         break;

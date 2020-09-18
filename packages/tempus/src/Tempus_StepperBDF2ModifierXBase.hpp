@@ -35,12 +35,13 @@ namespace Tempus {
  *  \renewcommand{\thealgorithm}{}
  *  \caption{BDF2 with the locations of the application actions indicated}
  *  \begin{algorithmic}[1]
- *    \State Start with $x_n$, $\Delta t_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Form $f(x_{n},t_{n})$
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *    \State Form $x_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \State {\it modifierX.execute(solutionHistory, stepper, BEGIN\_STEP)}                                                         
+ *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively.                                             
+ *    \State {\it modifierX.execute(solutionHistory, stepper, BEFORE\_SOLVE)}                                              
+ *    \State Solve $F( (3 x_{n} - 4 x _{n-1} + x_{n-2})/(3\Delta t),x_{n},t_{n}) for $x_n$                                                            
+ *    \State {\it modifierX.execute(solutionHistory, stepper, AFTER\_SOLVE)}                                                                          
+ *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$                                                                     
+ *    \State {\it modifierX.execute(solutionHistory, stepper, END\_STEP)}             
  *  \end{algorithmic}
  *  \f}
  */
@@ -98,8 +99,8 @@ private:
       }
       case StepperBDF2AppAction<Scalar>::END_STEP:
       {
-        modType = XDOT_END_STEP;
-        x = stepper->getStepperXDot();
+        modType = X_END_STEP;
+        x = workingState->getX();
         break;
       }
       default:
@@ -117,7 +118,7 @@ public:
     X_BEGIN_STEP,     ///< Modify \f$x\f$ at the beginning of the step.
     X_BEFORE_SOLVE,   ///< Modify \f$x\f$ before the implicit solve.
     X_AFTER_SOLVE,    ///< Modify \f$x\f$ after the implicit solve
-    XDOT_END_STEP     ///< Modify \f$\dot{x}\f$ at the end of the step.
+    X_END_STEP     ///< Modify \f$x\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.

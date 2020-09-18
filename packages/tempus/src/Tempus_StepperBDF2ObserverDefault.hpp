@@ -40,8 +40,10 @@ public:
     const typename StepperBDF2AppAction<Scalar>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
+      case StepperBDF2AppAction<Scalar>::BEGIN_STEP:
       case StepperBDF2AppAction<Scalar>::BEFORE_SOLVE:
       case StepperBDF2AppAction<Scalar>::AFTER_SOLVE:
+      case StepperBDF2AppAction<Scalar>::END_STEP:
       {
         // No-op.
         break;

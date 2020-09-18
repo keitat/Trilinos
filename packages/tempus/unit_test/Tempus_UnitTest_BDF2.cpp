@@ -377,8 +377,8 @@ public:
   /// Constructor                                                                                                   
   StepperBDF2ModifierXTest()
     : testX_BEGIN_STEP(false),testX_BEFORE_SOLVE(false),
-      testXDOT_END_STEP(false),testX_AFTER_SOLVE(false),
-      testX(-.99),testXDot(-.99),testTime(0.0),testDt(0.0)
+      testX_AFTER_SOLVE(false),testX_END_STEP(false),
+      testXbegin(-.99),testXend(-.99),testTime(0.0),testDt(0.0)
   {}
 
   /// Destructor                                                                                                    
@@ -394,7 +394,7 @@ public:
     case StepperBDF2ModifierXBase<double>::X_BEGIN_STEP:
       {
         testX_BEGIN_STEP = true;
-        testX = get_ele(*(x), 0);
+        testXbegin = get_ele(*(x), 0);
         break;
       }
     case StepperBDF2ModifierXBase<double>::X_BEFORE_SOLVE:
@@ -409,10 +409,10 @@ public:
         testTime = time;
         break;
       }
-    case StepperBDF2ModifierXBase<double>::XDOT_END_STEP:
+    case StepperBDF2ModifierXBase<double>::X_END_STEP:
       {
-        testXDOT_END_STEP = true;
-        testXDot = get_ele(*(x), 0);
+        testX_END_STEP = true;
+        testXend = get_ele(*(x), 0);
         break;
       }
     default:
@@ -423,27 +423,26 @@ public:
   bool testX_BEGIN_STEP;
   bool testX_BEFORE_SOLVE;
   bool testX_AFTER_SOLVE;
-  bool testXDOT_END_STEP;
-  double testX;
-  double testXDot;
+  bool testX_END_STEP;
+  double testXbegin;
+  double testXend;
   double testTime;
   double testDt;
 };
 
-  TEUCHOS_UNIT_TEST(BDF2, AppAction_ModifierX)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(BDF2, AppAction_ModifierX)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
+  // Setup Stepper for field solve ----------------------------       
+  auto stepper = rcp(new Tempus::StepperBDF2<double>());
+  stepper->setModel(model);
+  auto modifierX = rcp(new StepperBDF2ModifierXTest());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
 
-    // Setup Stepper for field solve ----------------------------                                                     
-    auto stepper = rcp(new Tempus::StepperBDF2<double>());
-    stepper->setModel(model);
-    auto modifierX = rcp(new StepperBDF2ModifierXTest());
-    stepper->setAppAction(modifierX);
-    stepper->initialize();
-
-    // Setup initial condition SolutionState --------------------                                                     
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------         
+  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
+    stepper->getModel()->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -483,17 +482,15 @@ public:
   TEST_COMPARE(modifierX->testX_BEGIN_STEP, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_SOLVE, ==, true);
   TEST_COMPARE(modifierX->testX_AFTER_SOLVE, ==, true);
-  TEST_COMPARE(modifierX->testXDOT_END_STEP, ==, true);
+  TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
-  // Testing that values can be set through the Modifier.                                                            
+  // Testing that values can be set through the Modifier.                 
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
-  // Temporary memory for xDot is not guarranteed to exist outside the Stepper.                                       
-  auto xDot = stepper->getStepperXDot();
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testXbegin, get_ele(*(x), 0), 1.0e-15);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
+  x = solutionHistory->getWorkingState()->getX();
+  TEST_FLOATING_EQUALITY(modifierX->testXend, get_ele(*(x), 0), 1.0e-15);
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
-
   auto time = solutionHistory->getWorkingState()->getTime();
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
   }
